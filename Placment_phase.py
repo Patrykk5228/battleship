@@ -11,7 +11,7 @@ def print_board(board):
         print((" ").join(row))
 
 print("Let's play Battleship!\n")
-print_board(board)
+print_board(board) # only for check
 
 def display_board():
 
@@ -23,4 +23,5 @@ def display_board():
         print(row_list[index] + ' ' + ' ' + row[0] + '   ' + row[1] + '   ' + row[2] + '   ' + row[3] + '   ' + row[4])
         index += 1
         print('  '+(''*(len(board)-2))+'')
-display_board()
+        
+display_board() # only for check
