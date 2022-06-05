@@ -1,3 +1,4 @@
+from itertools import count
 from random import randint
 from re import T
 import sys
@@ -24,15 +25,31 @@ map_size = 5
 shooting_turn = 0
 fired_shots = []
 fired_shots2 = []
-medium_ships = []
+hits = []
+sunk_ships = []
 p1_ships = {}
 p2_ships = {}
+ships_position = {}
+ships_position2 = {}
 letter_list = ("A", "B", "C", "D", "E", "F", "G", "H", "I", "J")
 
-def get_menu_option():
-    
+word_battleship = """\
+██████   █████  ████████ ████████ ██      ███████ ███████ ██   ██ ██ ██████  
+██   ██ ██   ██    ██       ██    ██      ██      ██      ██   ██ ██ ██   ██ 
+██████  ███████    ██       ██    ██      █████   ███████ ███████ ██ ██████  
+██   ██ ██   ██    ██       ██    ██      ██           ██ ██   ██ ██ ██      
+██████  ██   ██    ██       ██    ███████ ███████ ███████ ██   ██ ██ ██      
+                                                                            
+"""
 
-    print (70 * "-" , "MENU" , 70 * "-")
+def cls():
+    os.system('cls' if os.name=='nt' else 'clear') 
+
+def get_menu_option():
+    global map_size
+    print("\n")
+    print(word_battleship)  
+    print (40 * "-" , "MENU" , 40 * "-")
     print(" ")
     print("---------- BATTLESHIP ---------")
     print(" ")
@@ -43,7 +60,7 @@ def get_menu_option():
         if option == "1":
             print("You've chosen START GAME")
         elif option == "2":
-            player_map_size_menu()
+            map_size = player_map_size_menu()
         elif option == "3":
             print("You've chosen EXIT")
             sys.exit()
@@ -68,62 +85,68 @@ def player_map_size_menu():
     if map_size == "5":
         print(" ")
         print("* SIZE 5 LOAD")
+        cls()
         get_menu_option()
     elif map_size == "6":
         print(" ")
         print("* SIZE 6 LOAD")
+        cls()
         get_menu_option()
     elif map_size == "7":
         print(" ")
         print("* SIZE 7 LOAD")
+        cls()
         get_menu_option()
     elif map_size == "8":
         print(" ")
         print("* SIZE 8 LOAD")
+        cls()
         get_menu_option()
     elif map_size == "9":
         print(" ")
         print("* SIZE 9 LOAD")
+        cls()
         get_menu_option()
     elif map_size == "10":
         print(" ")
         print("* SIZE 10 LOAD")
+        cls()
         get_menu_option()
     else:
         cls()
         print("       INCORECT MAP SIZE !")
         print(" ")
         player_map_size_menu()
-    return map_size
+    return int(map_size)
  
 def get_empty_board(board):
-    for i in range(5):
+    for i in range(map_size):
         row = []
-        for j in range(5):
+        for j in range(map_size):
             row.append(("0"))
         board.append(row)
     return board
  
 def get_empty_board2(board2):
-    for i in range(5):
+    for i in range(map_size):
         row = []
-        for j in range(5):
+        for j in range(map_size):
             row.append(("0"))
         board2.append(row)
     return board2
  
 def get_type_board(board_guess):
-    for i in range(5):
+    for i in range(map_size):
         row = []
-        for j in range(5):
+        for j in range(map_size):
             row.append(("0"))
         board_guess.append(row)
     return board_guess
  
 def get_type_board2(board_guess2):
-    for i in range(5):
+    for i in range(map_size):
         row = []
-        for j in range(5):
+        for j in range(map_size):
             row.append(("0"))
         board_guess2.append(row)
     return board_guess2
@@ -216,7 +239,11 @@ def check_position(board, coordinates, placement, ship_type, turn):
                             return False
                     if row == (len(board)-1):
                         if column != 0:
-                            if board[row-1][column] == "X" or board[row][column-1] == "X":
+                            if column == (len(board)-1):
+                                if board[row-1][column] == "X" or board[row][column-1] == "X":
+                                    print(error_msg)
+                                    return False
+                            elif board[row-1][column] == "X" or board[row][column-1] == "X" or board[row][column+1] == "X":
                                 print(error_msg)
                                 return False
                         else:
@@ -225,7 +252,7 @@ def check_position(board, coordinates, placement, ship_type, turn):
                                 return False
                     elif column == (len(board)-1):
                         if row != 0:
-                            if board[row-1][column] == "X" or board[row][column-1] == "X":
+                            if board[row-1][column] == "X" or board[row][column-1] == "X" or board[row+1][column] == "X":
                                 print(error_msg)
                                 return False
                         else:
@@ -286,7 +313,7 @@ def check_coordinates(player, already_chosen, already_chosen2, ship_type):
 def display_board(board, map_size, letter_list):
     map_size = int(map_size) + 1
     index = 0
- 
+    print("\n")
     for element in board:
         if index < 1:
             print("   ", end="")
@@ -323,11 +350,11 @@ def verify_ship(chosen_ship, ship_type, small_ship, medium_ship):
     global small_left, medium_left
     while True:
         if chosen_ship == "1":
-            print("You've chosen a small ship")
+            print("You've chosen a small ship (1 block)")
             ship_type = small_ship
             small_left -= 1
         elif chosen_ship == "2":
-            print("You've chosen a medium ship")
+            print("You've chosen a medium ship (2 blocks)")
             ship_type = medium_ship
             medium_left -=1
         else:
@@ -337,14 +364,14 @@ def verify_ship(chosen_ship, ship_type, small_ship, medium_ship):
         return ship_type
     
 def get_ship(board, coordinates, player, already_chosen, already_chosen2, small_ship):
-    global temporary_choices, round, small_left, medium_left, p1_ships, p2_ships
+    global temporary_choices, round, small_left, medium_left, p1_ships, p2_ships, ships_position, ships_position2
     ship_type = 0
     turn = 0
-    medium_ships = []
+    sunk_ships = []
     if round % 2 == 1:
         small_left = 3
         medium_left = 2
-        medium_ships = []
+        sunk_ships = []
     index = 0
     print(f"Player {player} you have 3 small ships and 2 medium ships.")
  
@@ -406,9 +433,15 @@ def get_ship(board, coordinates, player, already_chosen, already_chosen2, small_
             update_board(board, coordinates, placement, choice)
             cls()
             display_board(board, map_size, letter_list)
-        medium_ships.append(temporary_choices)
+        if choice == 1:
+            sunk_ships.append(placement)
+        else:
+            sunk_ships.append(temporary_choices)
         index += 1
-    save_ship_position(player, medium_ships, p1_ships, p2_ships)
+    if player == 1:
+        ships_position = save_ship_position(player, sunk_ships, p1_ships, p2_ships, index)
+    else:
+        ships_position2 = save_ship_position(player, sunk_ships, p1_ships, p2_ships, index)
     return board
 
 #next phase - shooting phase
@@ -416,7 +449,7 @@ def get_ship(board, coordinates, player, already_chosen, already_chosen2, small_
 def display_boards(board_guess, board_guess2, letter_list, map_size):
     map_size = int(map_size) + 1
     index = 0
- 
+    print("\n")
     for element, element2 in zip(board_guess, board_guess2):
         if index < 1:
             print("Player 1", end="                  ")
@@ -473,71 +506,112 @@ def get_shot(player, fired_shots, fired_shots2):
             continue
         return shot
 
-def save_ship_position(player, medium_ships, p1_ships, p2_ships):
-    ships_num = 2
-    medium_ships = [x for x in medium_ships if x != []]  
+def save_ship_position(player, sunk_ships, p1_ships, p2_ships, ships_count):
+    sunk_ships = [x for x in sunk_ships if x != []]  
     #add a list of tuples from temporary choices to dictionary
     if player == 1:
-        for i in range(ships_num):
-            p1_ships[i] = medium_ships[i]
+        for i in range(ships_count):
+            p1_ships[i] = sunk_ships[i]
         return p1_ships
     else:
-        for i in range(ships_num):
-            p2_ships[i] = medium_ships[i]
+        for i in range(ships_count):
+            p2_ships[i] = sunk_ships[i]
         return p2_ships
 
-def update_game_boards(player, board_guess, shot, board, coordinates, medium_ships):
-    if shot == None:
-        return board
+def update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position, is_success):
     if player == 1:
         for row in range(len(coordinates)):
             for column in range(len(board)):
                 if shot == coordinates[row][column]:
-                    for key, value in medium_ships.items():
-                        if value[0] != coordinates[row][column] or value[1] != coordinates[row][column]:
-                            board_guess[row][column] == "H"
-                        else:
-                            board_guess[row][column] == "S"
-                else:
-                    board_guess[row][column] = "M"                 
-    return board
+                    if board2[row][column] == "X":
+                        board_guess2[row][column] = "H"
+                    else:
+                        board_guess2[row][column] = "M"
+                    change_to_sunk(board_guess2, coordinates, ships_position, row, column, is_success)
+        return board_guess2
+    if player == 2:
+        for row in range(len(coordinates)):
+            for column in range(len(board)):
+                if shot == coordinates[row][column]:
+                    if board[row][column] == "X":
+                        board_guess[row][column] = "H"
+                    else:
+                        board_guess[row][column] = "M"
+                    change_to_sunk(board_guess, coordinates, ships_position, row, column, is_success)                 
+        return board_guess
 
 
 def verify_shots(board, board2, coordinates, player, shot):
-    #check if the shot is successful or not
     if player == 1:
-        for row in range(len(board)):
-            for column in range(len(coordinates)):
-                if shot == coordinates[row][column]:
-                    if board[row][column] == "X":
-                        print("You've hit a ship!")
-                        return True
-        print("You've missed!")
-        return False
-    if player == 2:
         for row in range(len(board2)):
             for column in range(len(coordinates)):
                 if shot == coordinates[row][column]:
                     if board2[row][column] == "X":
                         print("You've hit a ship!")
                         return True
-        print("You've missed!")
-        return False
+    if player == 2:
+        for row in range(len(board)):
+            for column in range(len(coordinates)):
+                if shot == coordinates[row][column]:
+                    if board[row][column] == "X":
+                        print("You've hit a ship!")
+                        return True
+    print("You've missed!")
+    return False
 
-def change_to_sunk(board_guess, coordinates, player, medium_ships, row, index, is_success):
-    hits = 0
-    damaged_blocks = []
+def change_to_sunk(board_guess, coordinates, ship_position, row, index, is_success):
+    
+    count = 0
     if is_success:
-        for val in medium_ships.values():
-            for coords in val:
-                if coords == coordinates[row][index]:
-                    hits += 1
-                    damaged_blocks.append(coordinates[row][index])
-                    if hits == 2:
-                        if damaged_blocks[0] == coordinates[row][index] or damaged_blocks[1] == coordinates[row][index]:
-                            board_guess[row][index] = "S"
-                            print("You've sunk a ship!")
+        for val in ship_position.values():
+            if len(val) == 2:
+                if val == coordinates[row][index]:
+                    board_guess[row][index] = "S"
+                    print("You've sunk a ship!")
+            else:
+                for i in range(len(coordinates)):
+                    for j in range(len(board_guess)):
+                        if val[0] == coordinates[i][j]:
+                            if board_guess[i][j] == "H":
+                                count += 1
+                                board_guess[i][j] = "S"
+                        if val[1] == coordinates[i][j]:
+                            if board_guess[i][j] == "H":
+                                count += 1
+                                board_guess[i][j] = "S"
+        if count == 2:
+            print("You've sunk a ship!")
             
+def check_game_status(player, board, board2, board_guess, board_guess2):
+    sunk_count = 0
+    blocks_number = check_number_of_blocks(board)
+    if player == 1:
+        for row in range(len(board)):
+            for column in range(len(board)):
+                if board[row][column] == "X":
+                    if board_guess[row][column] == "S":
+                        sunk_count += 1
+        if blocks_number == sunk_count:
+            print(f"Player {player} wins!")
+            return True            
+    else:
+        for row in range(len(board2)):
+            for column in range(len(board2)):
+                if board2[row][column] == "X":
+                    if board_guess2[row][column] == "S":
+                        sunk_count += 1
+        if blocks_number == sunk_count:
+            print(f"Player {player} wins!")
+            return True
+    return False
+    
+def check_number_of_blocks(board):
+    blocks = 0
+    for row in range(len(board)):
+        for column in range(len(board)):
+            if board[row][column] == "X":
+                blocks += 1
+    return blocks
 
 def player_turn(round, player):
     if round % 2 == 0:
@@ -546,34 +620,13 @@ def player_turn(round, player):
         player = 2
     return player
  
-def hit_miss(player, board_guess, board_guess2, medium_ships, shot, board, board2, coordinates):
-            
-    # M = Missed
-    # 0 = Undiscovered
-    # H = Hit part ship
-    # S = Sunk ship
-    is_success = verify_shots(board, board2, coordinates, player, shot)
-    if is_success:
-        for row in range(len(board)):
-            for column in range(len(coordinates)):
-                if board == "M":
-                    print("Miss")
-                elif board == "0":
-                    print("Undiscovered")
-                elif board == "H":
-                    print("Hit")
-                elif board == "S":
-                    print("Sunk ship")
-            return board
- 
 def player_display(player):
     cls()
+    print("")
     player = input(f"Player {player} press any key to start.")
     
- 
-def cls():
-    os.system('cls' if os.name=='nt' else 'clear') 
- 
+cls()
+option = get_menu_option()
 get_empty_board(board)
 get_empty_board2(board2)
 get_coordinates(board, coordinates)  
@@ -582,8 +635,10 @@ display_board(board, map_size, letter_list) # only for check
 player = 1
 get_ship(board, coordinates, player, already_chosen, already_chosen2, small_ship)
 round += 1
-player_display(player)
 player = 2
+player_display(player)
+cls()
+display_board(board2, map_size, letter_list)
 get_ship(board2, coordinates, player, already_chosen, already_chosen2, small_ship)
 print("Game starts!")
 print("\n")
@@ -595,7 +650,18 @@ display_boards(board_guess, board_guess2, letter_list, map_size)
 is_game_running = True
 round = 0
 while is_game_running:
+    cls()
+    display_boards(board_guess, board_guess2, letter_list, map_size)
     player = player_turn(round, player)
     shot = get_shot(player, fired_shots, fired_shots2)
     is_success = verify_shots(board, board2, coordinates, player, shot)
+    if player == 1:
+        update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position2, is_success)
+    else:
+        update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position, is_success)
+    game_status = check_game_status(player, board, board2, board_guess, board_guess2)
+    if game_status:
+        is_game_running = False
     round += 1
+    
+    
