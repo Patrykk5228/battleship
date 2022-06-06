@@ -3,6 +3,7 @@ from random import randint
 from re import T
 import sys
 import os
+import time
 from tkinter import E
  
 board = []
@@ -25,7 +26,8 @@ map_size = 5
 shooting_turn = 0
 fired_shots = []
 fired_shots2 = []
-hits = []
+hits1 = []
+hits2 = []
 sunk_ships = []
 p1_ships = {}
 p2_ships = {}
@@ -203,70 +205,46 @@ def valid_coordinates(coordinates, placement):
     return possible_coordinators
         
  
-def check_position(board, coordinates, placement, ship_type, turn):
+def check_position(board, coordinates, placement):
     
     error_msg = "Ships are too close!"
     for row in range(len(board)):
         for column in range(len(coordinates)):
             if placement == coordinates[row][column]:
-                if turn == 1:
-                    if row == 0 and column == 0:
-                        if board[row+1][column] == "X" or board[row][column+1] == "X":
-                            print(error_msg)
-                            return False
-                    if row == (len(board)-1):
-                        if column != 0:
+                if row == 0 and column == 0:
+                    if board[row+1][column] == "X" or board[row][column+1] == "X":
+                        print(error_msg)
+                        return False
+                if row == (len(board)-1):
+                    if column != 0:
+                        if column == (len(board)-1):
                             if board[row-1][column] == "X" or board[row][column-1] == "X":
                                 print(error_msg)
                                 return False
-                    elif column == (len(board)-1):
-                        if row != 0:
-                            if board[row-1][column] == "X" or board[row][column-1] == "X":
-                                print(error_msg)
-                                return False
-                    elif board[row+1][column] == "X" or board[row-1][column] == "X":
-                        if row != 0:
+                        elif board[row-1][column] == "X" or board[row][column-1] == "X" or board[row][column+1] == "X":
                             print(error_msg)
                             return False
-                    elif board[row][column+1] == "X" or board[row][column-1] == "X":
-                        if column != 0:
+                    else:
+                        if board[row-1][column] == "X" or board[row][column+1] == "X":
                             print(error_msg)
                             return False
-                elif turn == 2:
-                    if row == 0 and column == 0:
-                        if board[row+1][column] == "X" or board[row][column+1] == "X":
+                elif column == (len(board)-1):
+                    if row != 0:
+                        if board[row-1][column] == "X" or board[row][column-1] == "X" or board[row+1][column] == "X":
                             print(error_msg)
                             return False
-                    if row == (len(board)-1):
-                        if column != 0:
-                            if column == (len(board)-1):
-                                if board[row-1][column] == "X" or board[row][column-1] == "X":
-                                    print(error_msg)
-                                    return False
-                            elif board[row-1][column] == "X" or board[row][column-1] == "X" or board[row][column+1] == "X":
-                                print(error_msg)
-                                return False
-                        else:
-                            if board[row-1][column] == "X" or board[row][column+1] == "X":
-                                print(error_msg)
-                                return False
-                    elif column == (len(board)-1):
-                        if row != 0:
-                            if board[row-1][column] == "X" or board[row][column-1] == "X" or board[row+1][column] == "X":
-                                print(error_msg)
-                                return False
-                        else:
-                            if board[row+1][column] == "X" or board[row][column-1] == "X":
-                                print(error_msg)
-                                return False
-                    elif board[row+1][column] == "X" or board[row-1][column] == "X":
-                        if row != 0:
+                    else:
+                        if board[row+1][column] == "X" or board[row][column-1] == "X":
                             print(error_msg)
                             return False
-                    elif board[row][column+1] == "X" or board[row][column-1] == "X":
-                        if column != 0:
-                            print(error_msg)
-                            return False                   
+                elif board[row+1][column] == "X" or board[row-1][column] == "X":
+                    if row != 0:
+                        print(error_msg)
+                        return False
+                elif board[row][column+1] == "X" or board[row][column-1] == "X":
+                    if column != 0:
+                        print(error_msg)
+                        return False                   
     return True
     
 def check_coordinates(player, already_chosen, already_chosen2, ship_type):
@@ -396,7 +374,7 @@ def get_ship(board, coordinates, player, already_chosen, already_chosen2, small_
                 break
             if choice == 1:
                 turn = 1
-                is_correct_position = check_position(board, coordinates, placement, choice, turn)
+                is_correct_position = check_position(board, coordinates, placement)
                 if is_correct_position == False:
                     if player == 1:
                         already_chosen.pop()
@@ -409,7 +387,7 @@ def get_ship(board, coordinates, player, already_chosen, already_chosen2, small_
                 while turn <= 2:
                     if turn == 1:
                         are_valid_coords = valid_coordinates(coordinates, placement)
-                        is_correct_position = check_position(board, coordinates, placement, choice, turn)
+                        is_correct_position = check_position(board, coordinates, placement)
                         if is_correct_position == True:
                             update_board(board, coordinates, placement, choice)
                             turn += 1
@@ -422,7 +400,7 @@ def get_ship(board, coordinates, player, already_chosen, already_chosen2, small_
                         coords = str(are_valid_coords).strip('[]')
                         print("Correct coordinates are: " + coords)
                         continue
-                    is_correct_position = check_position(board, coordinates, placement, choice, turn)
+                    is_correct_position = check_position(board, coordinates, placement)
                     if is_correct_position == False:
                         turn = 1
                         print("Please place the ship again from the first block.")
@@ -518,7 +496,7 @@ def save_ship_position(player, sunk_ships, p1_ships, p2_ships, ships_count):
             p2_ships[i] = sunk_ships[i]
         return p2_ships
 
-def update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position, is_success):
+def update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position, is_success, hits):
     if player == 1:
         for row in range(len(coordinates)):
             for column in range(len(board)):
@@ -527,7 +505,7 @@ def update_game_boards(player, board_guess, board_guess2, shot, board, board2, c
                         board_guess2[row][column] = "H"
                     else:
                         board_guess2[row][column] = "M"
-                    change_to_sunk(board_guess2, coordinates, ships_position, row, column, is_success)
+                    change_to_sunk(board_guess2, coordinates, ships_position, row, column, is_success, hits)
         return board_guess2
     if player == 2:
         for row in range(len(coordinates)):
@@ -537,17 +515,18 @@ def update_game_boards(player, board_guess, board_guess2, shot, board, board2, c
                         board_guess[row][column] = "H"
                     else:
                         board_guess[row][column] = "M"
-                    change_to_sunk(board_guess, coordinates, ships_position, row, column, is_success)                 
+                    change_to_sunk(board_guess, coordinates, ships_position, row, column, is_success, hits)                 
         return board_guess
 
 
-def verify_shots(board, board2, coordinates, player, shot):
+def verify_shots(board, board2, coordinates, player, shot, hits):
     if player == 1:
         for row in range(len(board2)):
             for column in range(len(coordinates)):
                 if shot == coordinates[row][column]:
                     if board2[row][column] == "X":
                         print("You've hit a ship!")
+                        hits.append(coordinates[row][column])
                         return True
     if player == 2:
         for row in range(len(board)):
@@ -555,32 +534,30 @@ def verify_shots(board, board2, coordinates, player, shot):
                 if shot == coordinates[row][column]:
                     if board[row][column] == "X":
                         print("You've hit a ship!")
+                        hits.append(coordinates[row][column])
                         return True
     print("You've missed!")
     return False
 
-def change_to_sunk(board_guess, coordinates, ship_position, row, index, is_success):
-    
-    count = 0
+def change_to_sunk(board_guess, coordinates, ship_position, row, index, is_success, hits):
+    medium_size = []
     if is_success:
         for val in ship_position.values():
             if len(val) == 2:
                 if val == coordinates[row][index]:
                     board_guess[row][index] = "S"
                     print("You've sunk a ship!")
-            else:
-                for i in range(len(coordinates)):
-                    for j in range(len(board_guess)):
-                        if val[0] == coordinates[i][j]:
-                            if board_guess[i][j] == "H":
-                                count += 1
-                                board_guess[i][j] = "S"
-                        if val[1] == coordinates[i][j]:
-                            if board_guess[i][j] == "H":
-                                count += 1
-                                board_guess[i][j] = "S"
-        if count == 2:
-            print("You've sunk a ship!")
+            if len(val[0]) == 2 and len(val[1]) == 2:
+                for coord in hits:
+                    if coord == val[0] or coord == val[1]:
+                        medium_size.append(coord)
+                        for i in range(len(board_guess)):
+                            for j in range(len(coordinates)):
+                                if len(medium_size) == 2:
+                                    if coordinates[i][j] in medium_size:
+                                        board_guess[i][j] = "S"                    
+                if len(medium_size) == 2:
+                    print("You've sunk a ship!")
             
 def check_game_status(player, board, board2, board_guess, board_guess2):
     sunk_count = 0
@@ -650,15 +627,17 @@ display_boards(board_guess, board_guess2, letter_list, map_size)
 is_game_running = True
 round = 0
 while is_game_running:
+    time.sleep(1)
     cls()
     display_boards(board_guess, board_guess2, letter_list, map_size)
     player = player_turn(round, player)
     shot = get_shot(player, fired_shots, fired_shots2)
-    is_success = verify_shots(board, board2, coordinates, player, shot)
     if player == 1:
-        update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position2, is_success)
+        is_success = verify_shots(board, board2, coordinates, player, shot, hits1)
+        update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position2, is_success, hits1)
     else:
-        update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position, is_success)
+        is_success = verify_shots(board, board2, coordinates, player, shot, hits2)
+        update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position, is_success, hits1)
     game_status = check_game_status(player, board, board2, board_guess, board_guess2)
     if game_status:
         is_game_running = False
