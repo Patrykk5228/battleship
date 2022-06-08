@@ -51,7 +51,7 @@ def get_menu_option():
     global map_size
     print("\n")
     print(word_battleship)  
-    print (40 * "-" , "MENU" , 40 * "-")
+    print (35 * "-" , "MENU" , 35 * "-")
     print(" ")
     print("---------- BATTLESHIP ---------")
     print(" ")
@@ -246,7 +246,8 @@ def check_position(board, coordinates, placement):
                         print(error_msg)
                         return False                   
     return True
-    
+
+#rewrite this function to support bigger ships
 def check_coordinates(player, already_chosen, already_chosen2, ship_type):
     error_msg = "Invalid input"
     while True:
@@ -323,7 +324,8 @@ def update_board(board, coordinates, placement, ship_type):
                     if temporary_choices[0] == coordinates[row][index] or temporary_choices[1] == coordinates[row][index]:
                         board[row][index] = "X"
         return board
- 
+    
+#add more ships type in the future
 def verify_ship(chosen_ship, ship_type, small_ship, medium_ship):
     global small_left, medium_left
     while True:
@@ -337,7 +339,7 @@ def verify_ship(chosen_ship, ship_type, small_ship, medium_ship):
             medium_left -=1
         else:
             print("Please choose correct ship!")
-            chosen_ship = input("Please choose the type of ship: 1. Small, 2. Medium: ")
+            chosen_ship = input("Please choose the type of ship:\n 1. Small\n 2. Medium: ")
             continue
         return ship_type
     
@@ -358,7 +360,7 @@ def get_ship(board, coordinates, player, already_chosen, already_chosen2, small_
         if(index > 0):
             print(f"You have {small_left} small ships and {medium_left} medium ships available for placement.")
         if(small_left > 0 and medium_left > 0):
-            chosen_ship = input("Please choose the type of ship: 1. Small, 2. Medium: ")
+            chosen_ship = input("Please choose the type of ship:\n 1. Small\n 2. Medium: ")
             choice = verify_ship(chosen_ship, ship_type, small_ship, medium_ship)
         elif(small_left == 0):
             chosen_ship = "2"
@@ -543,43 +545,34 @@ def change_to_sunk(board_guess, coordinates, ship_position, row, index, is_succe
     medium_size = []
     if is_success:
         for val in ship_position.values():
-            if len(val) == 2:
-                if val == coordinates[row][index]:
-                    board_guess[row][index] = "S"
-                    print("You've sunk a ship!")
-            if len(val[0]) == 2 and len(val[1]) == 2:
+            if val == coordinates[row][index]:
+                board_guess[row][index] = "S"
+                print("You've sunk a ship!")
+                break
+            elif len(val[0]) == 2 and len(val[1]) == 2:
                 for coord in hits:
-                    if coord == val[0] or coord == val[1]:
-                        medium_size.append(coord)
-                        for i in range(len(board_guess)):
-                            for j in range(len(coordinates)):
-                                if len(medium_size) == 2:
-                                    if coordinates[i][j] in medium_size:
-                                        board_guess[i][j] = "S"                    
-                if len(medium_size) == 2:
-                    print("You've sunk a ship!")
+                    if val[0] and val[1] in hits:
+                        if coord == val[0] or coord == val[1]:
+                            medium_size.append(coord)
+                            for i in range(len(board_guess)):
+                                for j in range(len(coordinates)):
+                                    if len(medium_size) == 2:
+                                        if coordinates[i][j] in medium_size:
+                                            board_guess[i][j] = "S"                    
+        if len(medium_size) >= 2:
+            print("You've sunk a ship!")
             
-def check_game_status(player, board, board2, board_guess, board_guess2):
+def check_game_status(board, board_guess):
     sunk_count = 0
     blocks_number = check_number_of_blocks(board)
-    if player == 1:
-        for row in range(len(board)):
-            for column in range(len(board)):
-                if board[row][column] == "X":
-                    if board_guess[row][column] == "S":
-                        sunk_count += 1
-        if blocks_number == sunk_count:
-            print(f"Player {player} wins!")
-            return True            
-    else:
-        for row in range(len(board2)):
-            for column in range(len(board2)):
-                if board2[row][column] == "X":
-                    if board_guess2[row][column] == "S":
-                        sunk_count += 1
-        if blocks_number == sunk_count:
-            print(f"Player {player} wins!")
-            return True
+    for row in range(len(board)):
+        for column in range(len(board)):
+            if board[row][column] == "X":
+                if board_guess[row][column] == "S":
+                    sunk_count += 1
+    if blocks_number == sunk_count:
+        print(f"Player {player} wins!")
+        return True
     return False
     
 def check_number_of_blocks(board):
@@ -635,10 +628,11 @@ while is_game_running:
     if player == 1:
         is_success = verify_shots(board, board2, coordinates, player, shot, hits1)
         update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position2, is_success, hits1)
+        game_status = check_game_status(board2, board_guess2)
     else:
         is_success = verify_shots(board, board2, coordinates, player, shot, hits2)
-        update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position, is_success, hits1)
-    game_status = check_game_status(player, board, board2, board_guess, board_guess2)
+        update_game_boards(player, board_guess, board_guess2, shot, board, board2, coordinates, ships_position, is_success, hits2)
+        game_status = check_game_status(board, board_guess)
     if game_status:
         is_game_running = False
     round += 1
