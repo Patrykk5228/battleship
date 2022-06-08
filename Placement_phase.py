@@ -614,6 +614,7 @@ print("Game starts!")
 print("\n")
 get_type_board(board_guess)
 get_type_board2(board_guess2)
+time.sleep(1)
 cls()
 display_boards(board_guess, board_guess2, letter_list, map_size)
 
