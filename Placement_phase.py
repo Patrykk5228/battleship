@@ -507,7 +507,7 @@ def update_game_boards(player, board_guess, board_guess2, shot, board, board2, c
                         board_guess2[row][column] = "H"
                     else:
                         board_guess2[row][column] = "M"
-                    change_to_sunk(board_guess2, coordinates, ships_position, row, column, is_success, hits)
+                    change_to_sunk(board_guess2, coordinates, ships_position, row, column, is_success, hits, shot)
         return board_guess2
     if player == 2:
         for row in range(len(coordinates)):
@@ -517,7 +517,7 @@ def update_game_boards(player, board_guess, board_guess2, shot, board, board2, c
                         board_guess[row][column] = "H"
                     else:
                         board_guess[row][column] = "M"
-                    change_to_sunk(board_guess, coordinates, ships_position, row, column, is_success, hits)                 
+                    change_to_sunk(board_guess, coordinates, ships_position, row, column, is_success, hits, shot)                 
         return board_guess
 
 
@@ -541,7 +541,7 @@ def verify_shots(board, board2, coordinates, player, shot, hits):
     print("You've missed!")
     return False
 
-def change_to_sunk(board_guess, coordinates, ship_position, row, index, is_success, hits):
+def change_to_sunk(board_guess, coordinates, ship_position, row, index, is_success, hits, shot):
     medium_size = []
     if is_success:
         for val in ship_position.values():
@@ -549,17 +549,18 @@ def change_to_sunk(board_guess, coordinates, ship_position, row, index, is_succe
                 board_guess[row][index] = "S"
                 print("You've sunk a ship!")
                 break
-            elif len(val[0]) == 2 and len(val[1]) == 2:
+            elif shot == coordinates[row][index] and len(val[0]) == 2 and len(val[1]) == 2:
                 for coord in hits:
-                    if val[0] and val[1] in hits:
+                    if val[0] in hits and val[1] in hits:
                         if coord == val[0] or coord == val[1]:
                             medium_size.append(coord)
                             for i in range(len(board_guess)):
                                 for j in range(len(coordinates)):
-                                    if len(medium_size) == 2:
-                                        if coordinates[i][j] in medium_size:
-                                            board_guess[i][j] = "S"                    
-        if len(medium_size) >= 2:
+                                    if len(medium_size) >= 2:
+                                        if coordinates[i][j] in medium_size and coordinates[i][j] in hits:
+                                            board_guess[i][j] = "S" 
+                                                              
+        if len(medium_size) >= 2 and shot == coordinates[row][index]:
             print("You've sunk a ship!")
             
 def check_game_status(board, board_guess):
